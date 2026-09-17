@@ -1,0 +1,55 @@
+name: Monokuma Announcements
+
+on:
+  schedule:
+    # NOTE: GitHub Actions cron is always UTC and does NOT adjust for daylight
+    # saving time. Kyiv is UTC+3 (EEST) in summer, UTC+2 (EET) in winter.
+    # Times below are set for EEST (summer). Flip to the EET lines when DST
+    # ends (last Sunday of October) and back when it resumes (last Sunday of
+    # March) — just comment/uncomment as needed.
+
+    - cron: "0 4 * * *"   # 07:00 Kyiv (EEST, summer) -> morning
+    - cron: "0 19 * * *"  # 22:00 Kyiv (EEST, summer) -> evening
+    # - cron: "0 5 * * *"   # 07:00 Kyiv (EET, winter) -> morning
+    # - cron: "0 20 * * *"  # 22:00 Kyiv (EET, winter) -> evening
+
+  workflow_dispatch:
+    inputs:
+      time_of_day:
+        description: "Which announcement to send"
+        required: true
+        default: "morning"
+        type: choice
+        options:
+          - morning
+          - evening
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Determine time of day
+        id: tod
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "value=${{ inputs.time_of_day }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "0 4 * * *" ] || [ "${{ github.event.schedule }}" = "0 5 * * *" ]; then
+            echo "value=morning" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=evening" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Send announcement
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TIME_OF_DAY: ${{ steps.tod.outputs.value }}
+        run: python send_announcement.py
