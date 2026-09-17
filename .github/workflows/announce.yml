@@ -10,6 +10,7 @@ on:
 
     - cron: "0 4 * * *"   # 07:00 Kyiv (EEST, summer) -> morning
     - cron: "0 19 * * *"  # 22:00 Kyiv (EEST, summer) -> evening
+    - cron: "45 8 * * *"   # TEMP TEST — delete after
     # - cron: "0 5 * * *"   # 07:00 Kyiv (EET, winter) -> morning
     # - cron: "0 20 * * *"  # 22:00 Kyiv (EET, winter) -> evening
 
